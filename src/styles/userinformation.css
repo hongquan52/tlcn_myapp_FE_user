@@ -1,0 +1,10 @@
+.userAvatar {  
+    width: 400px;
+    height: 300px;
+    border-radius: 50%;
+}
+
+.userUpdateIcon {
+    font-size: 32px !important;
+    cursor: pointer;
+}

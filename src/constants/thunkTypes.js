@@ -1,0 +1,36 @@
+export const API_URL = "http://localhost:8080";
+export const APII_URL = "https://fakestoreapi.com";
+
+export const thunkOrderTypes = {
+    PAYPAL : "PAYPAL",
+    CREATE_ORDER: "CREATE_ORDER",
+    GET_ALLORDER: "GET_ALLORDER",
+}
+export const thunkProductTypes = {
+    GETALL_PRODUCT: "GETALL_PRODUCT",
+    GET_PRODUCT: "GET_PRODUCT",
+    CREATE_PRODUCT: "CREATE_PRODUCT",
+    EDIT_PRODUCT: "EDIT_PRODUCT",
+    DELETE_PRODUCT: "DELETE_PRODUCT",
+    GETALL_PRODUCTLIST: "GETALL_PRODUCTLIST"
+};
+
+export const thunkUserTypes = {
+    GETALL_USER: "GETALL_USER",
+    GET_USER: "GET_USER",
+    CREATE_USER: "CREATE_USER",
+    EDIT_USER: "EDIT_USER",
+    DELETE_USER: "DELETE_USER",
+};
+
+export const thunkProductTypeTypes = {
+    GETALL_PRODUCTTYPE: "GETALL_PRODUCTTYPE",
+    GET_PRODUCTTYPE: "GET_PRODUCTTYPE",
+    CREATE_PRODUCTTYPE: "CREATE_PRODUCTTYPE",
+    EDIT_PRODUCTTYPE: "EDIT_PRODUCTTYPE",
+    DELETE_PRODUCTTYPE: "DELETE_PRODUCTTYPE",
+};
+export const thunkCartTypes = {
+    GET_CART : "GET_CART",
+    DELETE_CART: "DELETE_CART",
+};
