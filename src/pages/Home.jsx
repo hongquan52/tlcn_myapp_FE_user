@@ -23,9 +23,10 @@ import TestimonialSlider from '../components/UI/Slider/TestimonialSlider'
 import HomeSlider from '../components/UI/Slider/HomeSlider'
 
 import { useQuery } from '@tanstack/react-query'
-import { thunkProductTypes, thunkProductTypeTypes } from '../constants/thunkTypes'
-import { getAllProducts, getAllProductsList } from '../api/fetchers/product'
-import { getAllProductType } from '../api/fetchers/producttype'
+import { thunkCartTypes, thunkProductTypes, thunkProductTypeTypes } from '../constants/thunkTypes'
+import { getAllProducts, getAllProductsList, getHotProducts } from '../api/fetchers/product'
+import { getCart } from '../api/fetchers/cart'
+
 
 const featureData = [
   {
@@ -47,16 +48,17 @@ const featureData = [
 
 const Home = () => {
   
-  // fetch api
+  const {data, isLoading} = useQuery([thunkProductTypes.GETALL_PRODUCT], getAllProducts)
+  const queryGetHotProduct = useQuery([thunkProductTypes.GETHOT_PRODUCT], getHotProducts)
+
   
-  const {isLoading, data} = useQuery([thunkProductTypes.GETALL_PRODUCT],getAllProducts)
-  const queryListProducts = useQuery([thunkProductTypes.GETALL_PRODUCTLIST], getAllProductsList)
-  console.log('list product by product type: ',queryListProducts.data)
-  //
   const [category, setCategory] = useState('ALL')
   
   const [allProducts, setAllProducts] = useState([])
-  
+  const [hotProducts, setHotProducts] = useState([])
+
+  const [cart, setCart] = useState([])
+
   const [open, setOpen] = useState(false);
   
   const [hotPizza, setHotPizza] = useState([]);
@@ -64,77 +66,61 @@ const Home = () => {
   const handleClick = () => {
     setOpen(!open);
   };
-  useEffect(() => {
-    if(data) {
-      setAllProducts(data.data.results)
-    }
-  },[data])
+  
 
   useEffect(() => {
-    if(data) {
-      const filteredPizza = data.data.results.filter((item) => item.price > 1000);
-      const slicePizza = filteredPizza.slice(0, 4);
+    if(hotProducts) {
+      // const filteredPizza = hotProducts.filter((item) => item.price > 1000);
+      const slicePizza = hotProducts.slice(0, 8);
       setHotPizza(slicePizza);
+      
     }
-  }, [data]);
+  }, [hotProducts]);
   
+  useEffect(() => {
+    if(queryGetHotProduct.data) {
+      setHotProducts(queryGetHotProduct.data.data);
+    }
+  })
+
   // search product
   useEffect(() => {
-    if(productList) {
+    if(data) {
       if (category === "ALL") {
-        setAllProducts(productList);
+        setAllProducts(data.data);
 
       }
   
       if (category === "Kingston") {
-        const filteredProducts = productList.filter(
+        const filteredProducts = data.data.filter(
           (item) => item.brand ==="Kingston"
         );
-        console.log('ram: ',filteredProducts)
+        console.log('Kingston product: ',filteredProducts)
         
         setAllProducts(filteredProducts);
       }
   
-      if (category === "SamSung") {
-        const filteredProducts = productList.filter(
-          (item) => item.brand === 'SamSung'
+      if (category === "Samsung") {
+        const filteredProducts = data.data.filter(
+          (item) => item.brand === 'Samsung'
         );
-        console.log('card man hinh: ',filteredProducts)
+        console.log('Samsung product: ',filteredProducts)
         setAllProducts(filteredProducts);
       }
   
-      if (category === "NZXT") {
-        const filteredProducts = productList.filter(
-          (item) => item.brand === 'NZXT'
+      if (category === "Logitech") {
+        const filteredProducts = data.data.filter(
+          (item) => item.brand === 'Logitech'
         );
-  
-        setAllProducts(filteredProducts);
-      }
-      if (category === "Corsair") {
-        const filteredProducts = productList.filter(
-          (item) => item.brand === 'Corsair'
-        );
-  
+        
+        console.log("Logitech product: ",filteredProducts)
         setAllProducts(filteredProducts);
       }
       
     }
-  }, [category, productList]);
+  }, [category, data]);
 
-  if(isLoading) {
-    return (
-      <div style={{
-        display: "flex",
-        height: "100vh",
-        alignItems: "center",
-        justifyContent: "center",
-      }}>
-        <Box sx={{ display: 'flex' }}>
-            <CircularProgress />
-        </Box>
-    </div>
-    )
-  }
+  console.log("Hot product is: ", hotProducts);
   return (
     <Helmet title='Home'>
       <section>
@@ -263,9 +249,9 @@ const Home = () => {
 
                 <button
                   className={`d-flex align-items-center gap-2 ${
-                    category === "SamSung" ? "foodBtnActive" : ""
+                    category === "Samsung" ? "foodBtnActive" : ""
                   } `}
-                  onClick={() => setCategory("SamSung")}
+                  onClick={() => setCategory("Samsung")}
                 >
                   {/* <img src={foodCategoryImg02} alt="" /> */}
                   Samsung
@@ -274,24 +260,15 @@ const Home = () => {
 
                 <button
                   className={`d-flex align-items-center gap-2 ${
-                    category === "Corsair" ? "foodBtnActive" : ""
+                    category === "Logitech" ? "foodBtnActive" : ""
                   } `}
-                  onClick={() => setCategory("Corsair")}
+                  onClick={() => setCategory("Logitech")}
                 >
                   {/* <img src={foodCategoryImg03} alt="" /> */}
-                  Corsair
+                  Logitech
                   <img src="https://1000logos.net/wp-content/uploads/2020/10/Corsair-logo.png" alt="" />
                 </button>
-                <button
-                  className={`d-flex align-items-center gap-2 ${
-                    category === "NZXT" ? "foodBtnActive" : ""
-                  } `}
-                  onClick={() => setCategory("NZXT")}
-                >
-                  {/* <img src={foodCategoryImg03} alt="" /> */}
-                  NZXT
-                  <img src="https://i.pinimg.com/originals/9b/c6/b1/9bc6b124e34c593797fca80d652dcfd6.png" alt="" />
-                </button>
+                
               </div> 
             </Col>
 
@@ -360,11 +337,12 @@ const Home = () => {
         <Container>
           <Row>
             <Col lg='12' className='text-center mb-5'>
-              <h2>Sản phẩm cao cấp</h2>
+              <h2>Sản phẩm bán chạy</h2>
             </Col>
             {
               hotPizza.map((item) => (
-                <Col lg='3' md='4' key={item.uid}>
+                <Col lg='3' md='4' key={item.id}>
+                  <p className='quantity__sales'>Số lượng bán ra: <span>{item.quantitySales}</span></p>
                   <ProductCard item={item} sukien={handleClick}/>
                 </Col>
               ))

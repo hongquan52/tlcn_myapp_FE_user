@@ -17,8 +17,9 @@ import '../styles/product-detail.css'
 import Rating from '@mui/material/Rating';
 import Typography from '@mui/material/Typography';
 import { useQuery } from '@tanstack/react-query'
-import { thunkProductTypes } from '../constants/thunkTypes'
+import { thunkFeedbackTypes, thunkProductTypes } from '../constants/thunkTypes'
 import { getAllProducts, getProduct } from '../api/fetchers/product'
+import { getAllFeedback, getFeedbackByProduct } from '../api/fetchers/feedback'
 
 const userInfo = JSON.parse(sessionStorage.getItem("userInfo")) 
 const cartId = sessionStorage.getItem("cartId")
@@ -26,32 +27,29 @@ const cartId = sessionStorage.getItem("cartId")
 const FoodDetails = () => {
   const [tab, setTab] = useState('desc')
   const [enteredName, setEnteredName] = useState('')
-  const [enteredEmail, setEnteredEmail] = useState('')
-
-  const [reviewMsg, setReviewMsg] = useState('')
+  
 
   const {productId} = useParams()
+
   // get product
   const {isLoading, data} = useQuery([thunkProductTypes.GET_PRODUCT],
     () => getProduct(productId),
     
   )
   // get all produccts
-  const queryAllProducts = useQuery([thunkProductTypes.GETALL_PRODUCT], getAllProducts)
-  
+  const queryAllProduct = useQuery([thunkProductTypes.GETALL_PRODUCT], getAllProducts)
+  // get all feedbacks
+  const queryAllFeedback = useQuery([thunkFeedbackTypes.GET_FEEDBACK_BYID], () => getFeedbackByProduct(productId));
+
+  const [allProductData, setAllProductData] = useState([])
   const [productData, setProductData] = useState([])
+  const [feedbackData, setFeedbackData] = useState([])
+
   const [value, setValue] = React.useState(2);
   
-  //const { id } = useParams()
   const dispatch = useDispatch()
   const [previewImg, setPreviewImg] = useState()
-  //const product = product.find(product => product.id === id)
   
-  
-
-  //const { title, price,category, image } = data.data
-
-  console.log('San pham lien quan: ',queryAllProducts.data.data.results)
   
   const addItem = () => {
     // dispatch(cartActions.addItem({
@@ -90,31 +88,54 @@ const FoodDetails = () => {
   const submitHandler = (e) => {
     e.preventDefault()
 
-    console.log(enteredName, enteredEmail, reviewMsg)
+    console.log("content: ", enteredName, ", vote: ", value)
+    var formdata = new FormData();
+    formdata.append("content", enteredName);
+    formdata.append("vote", value);
+    formdata.append("user", "2");
+    formdata.append("product", productId);
+
+    var requestOptions = {
+      method: 'POST',
+      body: formdata,
+      redirect: 'follow'
+    };
+
+    fetch("http://localhost:8080/api/v1/feedback", requestOptions)
+      .then(response => response.text())
+      .then(result => console.log(result))
+      .catch(error => console.log('error', error));
+    
+    window.location.reload();
   }
+    
+    
 
 
   useEffect(() => {
     
-    if(data) {
-      setProductData(data.data.results)
-      setPreviewImg(data.data.results.image[0])
+    if(data && queryAllFeedback.data && queryAllProduct.data) {
+      setProductData(data.data)
+      setPreviewImg(data.data.image)
+      setFeedbackData(queryAllFeedback.data.data)
+      setAllProductData(queryAllProduct.data.data)
       window.scrollTo(0, 0)
 
 
     }
-  }, [data])
+  }, [data, queryAllFeedback.data])
 
   console.log(productData)
+  console.log("api getAllFeedback", feedbackData)
 
   //Related product--------------------------
   
-  const relatedProduct = productList.filter(
-    item => item.discountPrice > 2000000 
+  const relatedProduct = allProductData.filter(
+    item => item.price <= productData.price 
   )
   // console.log(relatedProduct)
 
-  if(isLoading || queryAllProducts.isLoading) {
+  if(isLoading || queryAllFeedback.isLoading || queryAllProduct.isLoading) {
     return (
       <div style={{
         display: "flex",
@@ -156,15 +177,17 @@ const FoodDetails = () => {
                   className="img__item"
                   onClick={() => setPreviewImg(productData?.image)}
                 >
-                  <img src={productData?.image} alt="" className="w-50" />
+                  {/* <img src={productData?.image} alt="" className="w-50" /> */}
+                  <img src={productData?.image} alt="" className='w-50' />
                 </div>
               </div>
             </Col>
 
             <Col lg="4" md="4">
               <div className="product__main-img">
-                {/* <img src={previewImg} alt="" className="w-100" /> */} 
-                <img src={previewImg} alt="" className="w-100" />
+                
+                {/* <img src={previewImg} alt="" className="w-100" /> */}
+                <img src={productData?.image} alt="" className='w-100' />
               </div>
             </Col>
 
@@ -175,11 +198,14 @@ const FoodDetails = () => {
                 <p className="">
                   {" "}
                   <span className='product__discountPrice'>Giá:</span>
-                  <span className='product__discountPrice'>{productData?.discountPrice} VNĐ</span>
-                  <span className='product__price'>{productData?.price} VNĐ</span>
+                  <span className='product__discountPrice'>{productData?.price} VNĐ</span>
+                  <span className='product__price'>{productData?.price * productData?.promotion/100} VNĐ</span>
                 </p>
                 <p className="category mb-5">
-                  Loại sản phẩm: <span>{productData?.productType}</span>
+                  Loại sản phẩm: <span>{productData?.category}</span>
+                </p>
+                <p className="category mb-5">
+                  Thương hiệu: <span>{productData?.brand}</span>
                 </p>
 
                 <button onClick={addItem} className="addTOCart__btn">
@@ -196,38 +222,27 @@ const FoodDetails = () => {
               {
                 tab === 'desc' ? (
                   <div className="tab__content">
-                    <p>{productData?.name}</p>
+                    <p>{productData?.description}</p>
                   </div>
                 ) :
                   (
                     <div className="tab__form mb-3">
-
-                      <div className="review pt-5">
-                        <div className="review__content">
-                          <p className="user__name mb-0">John Doe</p>
-                          <p className="user__email">JohnCena@gmail.com</p>
-                          <p className="feedback__text">Great product</p>
-                        </div>
-                        <Rating name="read-only" value={value} readOnly />
-                      </div>
-                      <div className="review">
-                        <div className="review__content">
-                          <p className="user__name mb-0">John Doe</p>
-                          <p className="user__email">JohnCena@gmail.com</p>
-                          <p className="feedback__text">Great product</p>
-                        </div>
-                        <Rating name="read-only" value={value-2} readOnly />
-
-                      </div>
-                      <div className="review">
-                        <div className="review__content">
-                          <p className="user__name mb-0">John Doe</p>
-                          <p className="user__email">JohnCena@gmail.com</p>
-                          <p className="feedback__text">Great product</p>
-                        </div>
-                        <Rating name="read-only" value={value-1} readOnly />
-
-                      </div>
+                      {
+                        
+                        feedbackData.list.map((item) => (
+                          <div className="review pt-5">
+                            <div className="review__content">
+                              <p className="user__name mb-3">{item.userName}</p>
+                              <p className="user__email">Tên sản phẩm: {item.productName}</p>
+                              <p className="feedback__text">{item.content}</p>
+                            </div>
+                            <Rating name="read-only" value={item.vote} readOnly />
+                          </div>
+                        ))
+                        
+                      }
+                      
+                      
                       {/* NAME */}
                       <form className='form' onSubmit={submitHandler}>
                         <div className="form__group">
@@ -235,21 +250,7 @@ const FoodDetails = () => {
                             onChange={e => setEnteredName(e.target.value)}
                             required />
                         </div>
-                        {/* EMAIL */}
-                        <div className="form__group">
-                          <input type="text" placeholder='Enter your email...'
-                            onChange={e => setEnteredEmail(e.target.value)}
-                            required />
-                        </div>
-                        {/* MESSAGES */}
-                        <div className="form__group">
-                          <textarea
-                            rows={6}
-                            type="text"
-                            placeholder='Write your review here...'
-                            onChange={e => setReviewMsg(e.target.value)}
-                            required />
-                        </div>
+                        
                         <div className='form__group'>
                           <Box
                             sx={{
@@ -268,7 +269,7 @@ const FoodDetails = () => {
                           </Box>
                         </div>
                         {/* BUTTON SUBMIT */}
-                        <button type='submit' className='addTOCart__btn'>
+                        <button type='submit' className='addTOCart__btn' >
                           Submit
                         </button>
                       </form>
@@ -286,7 +287,7 @@ const FoodDetails = () => {
             </Col>
             {
               relatedProduct.map(item => (
-                <Col lg='3' md='4' sm='6' xs='6' key={item.uid}
+                <Col lg='3' md='4' sm='6' xs='6' key={item.id}
                   className='mb-4'>
                   <ProductCard item={item} />
                 </Col>

@@ -2,10 +2,9 @@ import { API } from '../baseUrl'
 
 export const getAllProductType = async () => {
     try {
-        const response = await API.get(`/api/v1/productType`);
+        const response = await API.get(`/api/v1/category`);
         return response;
     }
     catch (error) {
-        console.log(error.message)
     }
 }

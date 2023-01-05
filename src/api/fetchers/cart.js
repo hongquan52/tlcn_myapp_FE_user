@@ -1,12 +1,21 @@
 import { API } from "../baseUrl";
 
+const userID = sessionStorage.getItem("userID");
+console.log("userID in cart.js: ", userID);
 export const getCart = async () => {
     try {
-      const response = await API.get(`/api/v1/cart/viewCart`);
+      const response = await API.get(`/api/v1/cart/user`, {params: {userId: userID }});
       
       return response;
     } catch (error) {}
   }
+export const getProductInCart = async (id) => {
+  try {
+    const response = await API.get(`/api/v1/cart/product`, {params: {cartId: id }});
+    
+    return response;
+  } catch (error) {}
+}
 
 export const updateCart = async (uid) => {
     try {
@@ -16,8 +25,8 @@ export const updateCart = async (uid) => {
     } catch (error) {}
 }
 
-export const deleteCart = async (productId) => {
+export const deleteCart = async (productId, cartId) => {
   try {
-    await API.delete(`api/v1/cart/${productId}`);
+    await API.delete(`/api/v1/cart/product`, {params: {cartId: cartId, productId: productId}});
   } catch (error) {}
 };

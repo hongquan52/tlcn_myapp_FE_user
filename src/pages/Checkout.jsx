@@ -6,8 +6,8 @@ import Helmet from '../components/Helmet/Helmet'
 import { Combobox, DropdownList } from "react-widgets"
 import '../styles/checkout.css'
 import { useQuery } from '@tanstack/react-query'
-import { thunkCartTypes, thunkOrderTypes } from '../constants/thunkTypes'
-import { getCart } from '../api/fetchers/cart'
+import { thunkAddressTypes, thunkCartTypes, thunkOrderTypes, thunkUserTypes } from '../constants/thunkTypes'
+import { getCart, getProductInCart } from '../api/fetchers/cart'
 import { useEffect } from 'react'
 import { API } from '../api/baseUrl'
 import {useNavigate} from 'react-router-dom'
@@ -15,79 +15,72 @@ import {useNavigate} from 'react-router-dom'
 import {InputLabel, MenuItem, Select, FormControl} from '@mui/material'
 import { pay } from '../api/fetchers/pay'
 import { useRef } from 'react'
+import { getUSer } from '../api/fetchers/user'
+import { getAddressByUser } from '../api/fetchers/address'
 
 
 
-const userInfo = JSON.parse(sessionStorage.getItem("userInfo"))
+const userInfo = sessionStorage.getItem("userID")
 
-const api = 'localhost:3000/api/v1/order'
+const cartId = sessionStorage.getItem("cartId")
+
 
 const Checkout = () => {
   const navigate = useNavigate()
   const ref = useRef()
+  const queryGetUser = useQuery([thunkUserTypes.GET_USER], () => getUSer(userInfo) );
+  const queryGetAddressByUser = useQuery([thunkAddressTypes.GET_ADDRESS_BY_USER], () => getAddressByUser(userInfo) );
 
-  const [enterEmail, setEnterEmail] = useState(userInfo.customer.email)
-  const [enterPhone, setEnterPhone] = useState(userInfo.customer.phone)
-  const [enterStreet, setEnterStreet] = useState(userInfo.customer.address[0].street)
-  const [enterWard, setEnterWard] = useState(userInfo.customer.address[0].ward)
-  const [enterDistrict, setEnterDistrict] = useState(userInfo.customer.address[0].district)
-  const [enterProvince, setEnterProvince] = useState(userInfo.customer.address[0].province)
-  const [enterTypePayment, setEnterTypePayment] = useState("PAYPAL")
+  const [userData, setUserData] = useState([]);
+  const [addressData, setAddressUser] = useState([])
+  const [addressIdBill, setAddressIdBill] = useState(0)
 
-  const { isLoading, data } = useQuery([thunkCartTypes.GET_CART], getCart)
+  const [enterTypePayment, setEnterTypePayment] = useState("COD")
+
+  const {isLoading, data} = useQuery([thunkCartTypes.GET_PRODUCT_IN_CART],
+    () => getProductInCart(cartId) );
   const [cartData, setCartData] = useState([])
   //console.log(userInfo.customer?.uid)
   
 
   const cartTotalAmount = cartData?.reduce((acc, item) => {
-    return acc + item.number * (item.price*(100-item.discount)/100)
+    return acc + item.amount * (item.price*(100-item.promotion)/100)
   },0)
   const tong = Number(cartTotalAmount.toFixed(0))
   const phiShip = Number((tong*0.01).toFixed(2))
   console.log('cartData: ',cartData)
   
-  // if(tong > 3000) {
-  //   phiShip = Number((tong*0).toFixed(2))
-  // } else if(tong <= 3000 && tong > 1000) {
-  //   phiShip = Number((tong*0.05).toFixed(2))
-  // }
-  // else {
-  //   phiShip = Number((tong*0.1).toFixed(2))
-    
-  // }
 
+  var today = new Date();
+  var date =today.getFullYear()+'/'+(today.getMonth()+1)+'/'+today.getDate();
+  
+  console.log( date)
+  
   
   const totalAmount = Number(tong + phiShip)
 
   const submitHandler  = async (e) => {
-    console.log(enterTypePayment)
-    console.log(enterDistrict)
-    console.log(enterStreet)
-    console.log(enterProvince)
-    console.log(enterWard)
-
-    e.preventDefault()
-
     
-    var raw = {
-      "address": {
-        "street": enterStreet,
-        "province": enterProvince,
-        "district": enterDistrict,
-        "ward": enterWard,
-      },
-      "transportFee": 0,
-      "typePayment": enterTypePayment,
-      "phone": enterPhone,
-      "email": enterEmail,
-      "totalAmount": {
-        "total": totalAmount,
-        "discount": 1000
-      }
+    var formdata = new FormData();
+    formdata.append("status", "waiting_confirm");
+    formdata.append("paymentMethod", enterTypePayment);
+    formdata.append("payDate", date);
+    formdata.append("totalPrice", totalAmount);
+
+    var requestOptions = {
+      method: 'POST',
+      body: formdata,
+      redirect: 'follow'
     };
 
-    await API.post('/api/v1/order', raw)
+    fetch(`http://localhost:8080/api/v1/bill?userId=${userInfo}`, requestOptions)
+      .then(response => response.text())
+      .then(result => console.log(result))
+      .catch(error => console.log('error', error));
     
+    localStorage.setItem("addressIdBill", addressIdBill);
+    
+
     // redirect by type payment
     if(enterTypePayment === 'PAYPAL') {
       const form = {
@@ -103,6 +96,9 @@ const Checkout = () => {
     else if(enterTypePayment === 'COD') {
       navigate('/successOrder')
     }
+    //
+
+    
   }
 
   // const handlePay = async () => {
@@ -123,12 +119,14 @@ const Checkout = () => {
   // }
 
   useEffect(() => {
-    if (data) {
-      setCartData(data.data.results.product)
+    if (data && queryGetUser.data && queryGetAddressByUser.data) {
+      setCartData(data.data)
+      setUserData(queryGetUser.data.data)
+      setAddressUser(queryGetAddressByUser.data.data)
     }
-  }, data)
+  }, [data, queryGetUser.data, queryGetAddressByUser.data])
   // console.log(enterTypePayment)
-
+  console.log("address data: ", addressData)
   return (
     <Helmet title='Checkout'>
       <CommonSection title='Thanh toán' />
@@ -140,54 +138,62 @@ const Checkout = () => {
               <form className="checkout__form" onSubmit={submitHandler}>
                 <div className="form__group">
                   <label>Email</label>
-                  <input type="text" value={enterEmail}
-                    required
-                    onChange={e => setEnterEmail(e.target.value)}
+                  <input type="text" value={userData.email}
+                    
                   />
                 </div>
                 <div className="form__group">
                 <label>Phone</label>
 
-                  <input type="text" value={enterPhone}
-                    required
-                    onChange={e => setEnterPhone(e.target.value)} />
+                  <input type="text" value={userData.phone} />
+                    
                 </div>
-                <div className="form__group">
-                <label>Street</label>
+                {
+                  addressData.map((item) => {
+                    if(item.defaultAddress === true) {
+                      // setAddressIdBill(item.address.id);
+                      // console.log("item.address.id",item.address.id)
+                      localStorage.setItem('AddressIdBill', item.address.id);
+                      return (
+                        <>
+                        <div className="form__group">
+                          <label>Street</label>
 
-                  <input type="text" value={enterStreet}
-                    required
-                    onChange={e => setEnterStreet(e.target.value)} />
-                </div>
-                <div className="form__group">
-                <label>Ward</label>
+                            <input type="text" value={item.address.apartmentNumber}
+                              // required
+                              />
+                          </div>
+                          <div className="form__group">
+                          <label>Ward</label>
 
-                  <input type="text" value={enterWard}
-                    required
-                    onChange={e => setEnterWard(e.target.value)} />
-                </div>
-                <div className="form__group">
-                <label>District</label>
+                            <input type="text" value={item.address.ward}
+                              // required
+                              />
+                          </div>
+                          <div className="form__group">
+                          <label>District</label>
 
-                  <input type="text" value={enterDistrict}
-                    required
-                    onChange={e => setEnterDistrict(e.target.value)} />
-                </div>
-                <div className="form__group">
-                <label>Province</label>
+                            <input type="text" value={item.address.district}
+                              // required
+                              />
+                          </div>
+                          <div className="form__group">
+                          <label>Province</label>
 
-                  <input type="text" value={enterProvince}
-                    required
-                    onChange={e => setEnterProvince(e.target.value)} />
-                </div>
+                            <input type="text" value={item.address.province}
+                              // required
+                              />
+                          </div>
+                        </>
+                      )
+                    }
+                  }
+                  )
+                }
 
                 <div className="form__group">
                   <label>Phương thức thanh toán</label>
-                  {/* <DropdownList
-                    value={enterTypePayment}
-                    onChange={(nextValue) => setEnterTypePayment(nextValue)}
-                    data={["COD", "PAYPAL"]}
-                  /> */}
+                  
                   <FormControl fullWidth>
                     <InputLabel id="demo-simple-select-label"></InputLabel>
                     <Select

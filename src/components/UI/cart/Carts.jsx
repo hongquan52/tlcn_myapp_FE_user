@@ -13,24 +13,29 @@ import { Box, CircularProgress } from '@mui/material'
 import "../../../styles/shopping-cart.css";
 import { useQuery } from "@tanstack/react-query";
 import { thunkCartTypes } from "../../../constants/thunkTypes";
-import { getCart } from "../../../api/fetchers/cart";
+import { getCart, getProductInCart } from "../../../api/fetchers/cart";
+
+const cartId = sessionStorage.getItem('cartId')
 
 const Carts = () => {
 
   const [visible, setVisible] = useState(false)
-  const {isLoading, data} = useQuery([thunkCartTypes.GET_CART], getCart);
+  
+  const {isLoading, data} = useQuery([thunkCartTypes.GET_PRODUCT_IN_CART], () => getProductInCart(cartId));
+
   const [cartData, setCartData] = useState([])
   useEffect(() => {
     if(data) {
-      setCartData(data.data.results.product);
+      setCartData(data.data);
     }
   }, [data])
+
   const totalBill = cartData.reduce((acc, item) => {
     
-    return acc + (item.price * (1-item.discount/100) ) * item.number;
+    return acc + (item.price * (1-item.promotion/100) ) * item.amount;
+    
   }, 0)
-  totalBill.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-
+  // totalBill.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
   const dispatch = useDispatch();
   //const cartProducts = useSelector((state) => state.cart.cartItems);
@@ -70,6 +75,7 @@ const Carts = () => {
           {cartData.length === 0 ? (
             <h6 className="text-center mt-5">Giỏ hàng trống</h6>
           ) : (
+            
             cartData.map((item, index) => (
               <CartItem item={item} key={index}/>
             ))

@@ -1,12 +1,25 @@
 import React from 'react'
 import { Drawer, Typography } from '@mui/material'
+import { Box, CircularProgress } from '@mui/material'
 import { useState } from 'react'
 import { ListGroupItem } from 'react-bootstrap'
 import {Row, Col} from 'react-bootstrap'
 import '../styles/historyorderdetail.css'
 import { useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { thunkOrderTypes } from '../constants/thunkTypes'
+import { getOrder } from '../api/fetchers/order'
+import { Link } from 'react-router-dom'
+
 
 const HistoryOrderDetail = ({ data, isShowFeedback, setIsShowFeedback }) => {
+    const getOrderDetail = useQuery([thunkOrderTypes.GET_ORDER], () => 
+        getOrder(data?.billId)
+    )
+
+    
+    console.log("bill ID: ",data?.billId)
+    
     // console.log(data)
     // const [itemData, setItemData] = useState([])
 
@@ -17,54 +30,96 @@ const HistoryOrderDetail = ({ data, isShowFeedback, setIsShowFeedback }) => {
     // }, [data])
     // console.log(itemData)
     const [orderItem, setOrderItem] = useState([])
+    const [orderDetailItem, setOrderDetailItem] = useState([])
+
     useEffect(() => {
         if(data) {
             setOrderItem(data)
         }
     }, [data])
-    console.log('Order item: ',orderItem.product)
+    
+    useEffect(() => {
+        if(getOrderDetail.data) {
+            
+            setOrderDetailItem(getOrderDetail.data.data);
+            
+        }
+    }, [getOrderDetail.data])
+
+    console.log('Order item: ',orderDetailItem)
+
+    if(getOrderDetail.isLoading) {
+        return (
+            <div style={{
+                display: "flex",
+                height: "100vh",
+                alignItems: "center",
+                justifyContent: "center",
+            }}>
+                <Box sx={{ display: 'flex' }}>
+                    <CircularProgress />
+                </Box>
+            </div>
+        )
+    }
     return (
+        
         <Drawer
             open={isShowFeedback}
             anchor="right"
-            onClose={() => setIsShowFeedback(!isShowFeedback)}
+            onClose={() => {
+                setIsShowFeedback(!isShowFeedback);
+                
+            }
+                
+            }
             modal
             sx={{ zIndex: 1000 }}
         >
             <div className="orderDetail__heading">
-                <h4 className='orderDetail__heading-title'>Mã đơn hàng: {orderItem?.orderCode}</h4>
+                <h4 className='orderDetail__heading-title'>Mã đơn hàng: {orderItem?.billId}</h4>
                 <div className="orderDetail__heading-content">
-                    <h5 >Tổng giá trị: <span className='total__amount'>{orderItem?.total} VNĐ</span></h5>
-                    {
-                        orderItem?.status === 'completed' ?
+                    <h5 >Tổng giá trị: <span className='total__amount'>{orderItem?.totalPrice} VNĐ</span></h5>
+                    {/* {
+                        orderItem?.paymentMethod === 'Momo' ?
                         (
-                            <h5>Trạng thái: <span className='status__completed'>Hoàn thành</span></h5>
+                            <img src='https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png' className='w-50'/>
+                        ) :
+                        (
+                            <img src='https://w7.pngwing.com/pngs/40/100/png-transparent-united-states-dollar-money-united-states-one-hundred-dollar-bill-money-saving-bank-cash.png' className='w-50'/>
+
+                        )
+                    } */}
+                    {
+                        orderItem?.status === 'paid' ?
+                        (
+                            <h5>Trạng thái: <span className='status__completed'>Đã thanh toán</span></h5>
                         ):
                         null
                     }
                     {
-                        orderItem?.status === 'approved' ?
+                        orderItem?.status === 'confirmed' ?
                         (
                             <h5>Trạng thái: <span className='status__completed'>Đã xác nhận</span></h5>
                         ):
                         null
                     }
                     {
-                        orderItem?.status === 'wait_for_confirmation' ?
+                        orderItem?.status === 'waiting_confirm' ?
                         (
                             <h5>Trạng thái: <span className='status__wait_confirm'>Chờ xác nhận</span></h5>
                         ):
                         null
                     }
                     {
-                        orderItem?.status === 'transporting' ?
+                        orderItem?.status === 'delivering' ?
                         (
                             <h5>Trạng thái: <span className='status__readyToShip'>Đang vận chuyển</span></h5>
                         ):
                         null
                     }
                     {
-                        orderItem?.status === 'ready_to_ship' ?
+                        orderItem?.status === 'ready_to_delivery' ?
                         (
                             <h5>Trạng thái: <span className='status__readyToShip'>Chuẩn bị giao</span></h5>
                         ):
@@ -80,7 +135,7 @@ const HistoryOrderDetail = ({ data, isShowFeedback, setIsShowFeedback }) => {
                 </div>
             </div>
             {
-                orderItem?.product?.map((item) => (
+                orderDetailItem?.map((item) => (
                     // <>
                     // <h5>{item.productId}</h5>
                     // <h5>{item.number}</h5>
@@ -91,20 +146,22 @@ const HistoryOrderDetail = ({ data, isShowFeedback, setIsShowFeedback }) => {
                         <Row>
                             <Col lg='3' md='3'>
                                 <img className='orderDetail__image'
-                                 src={item.image[0]} alt="product-img" />
+                                 src={item.productImage} alt="product-img" />
+                                 {/* src={item.productImage} alt="product-img" /> */}
                                 
                             </Col>
                             <Col lg='6' md='3'>
                                 <div className="">
                                     <div>
-                                        <h3 className='cart__product-title'>{item.name}</h3>
+                                        <h3 className='cart__product-title'>{item.productName}</h3>
+                                        
                                         <p className='d-flex align-items-center gap-5 cart__product-price'>
                                             <span>{item.price} VNĐ</span>
                                         </p>
                                         <div className='d-flex align-items-center justify-content-between
                                             increase__decrease-btn'>
                                             <span className='increase__btn'></span>
-                                            <span className='quantity'>{item.number}</span>
+                                            <span className='quantity'>{item.amount}</span>
                                             <span className='decrease__btn'></span>
                                         </div>  
                                     </div>
@@ -114,6 +171,10 @@ const HistoryOrderDetail = ({ data, isShowFeedback, setIsShowFeedback }) => {
                     </ListGroupItem>
                 ))
             }
+            <Link to={`/delivery/${orderItem?.billId}`}><button className='addToCart__btn addToCart__btn1'
+                               >Go to delivery</button>
+            </Link>
+            
         </Drawer>
 
     )
@@ -923,5 +984,44 @@ const productList = [
         "discount": 10,
         "discountPrice": 360,
         "quantity": 30
+    }
+]
+
+const orderDetailItemTest = [
+    {
+        "productId": 1,
+        "productName": "Sản phẩm của Nguyễn Lê Quỳnh Trang",
+        "productImage": null,
+        "billId": 3,
+        "amount": 5,
+        "payDate": "2022-12-26",
+        "payMethod": "Cash",
+        "status": "paid",
+        "price": 400000.00,
+        "userResponseDTO": null
+    },
+    {
+        "productId": 2,
+        "productName": "CPU i5000",
+        "productImage": null,
+        "billId": 3,
+        "amount": 10,
+        "payDate": "2022-12-26",
+        "payMethod": "Cash",
+        "status": "paid",
+        "price": 5000000.00,
+        "userResponseDTO": null
+    },
+    {
+        "productId": 6,
+        "productName": "Nguyễn Hồng Quân",
+        "productImage": null,
+        "billId": 3,
+        "amount": 1,
+        "payDate": "2022-12-26",
+        "payMethod": "Cash",
+        "status": "paid",
+        "price": 480000.00,
+        "userResponseDTO": null
     }
 ]

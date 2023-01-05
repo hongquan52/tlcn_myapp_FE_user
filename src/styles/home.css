@@ -69,6 +69,24 @@
    color: #777;
    line-height: 30px; 
 }
+.quantity__sales {
+  font-weight: 600;
+  background-color: #df2020;
+  color: #fff;
+  padding: 20px;
+  font-size: 1rem;
+  border-radius: 50%;
+  justify-content: center;
+  display: flex;
+  align-items: center;
+}
+.quantity__sales span {
+  background-color: #fff;
+  color: #df2020;
+  padding: 5px 10px;
+  border-radius: 50%;
+  margin-left: 5px;
+}
 
 /* RESPONSIVE TABLET + MOBILE */
 @media only screen and (max-width: 768px) {

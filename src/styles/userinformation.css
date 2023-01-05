@@ -8,3 +8,12 @@
     font-size: 32px !important;
     cursor: pointer;
 }
+
+.defaultAddress_select {
+    height: 50px;
+    width: 190px;
+    background-color: aliceblue;
+    border-radius: 10px;
+    color: black;
+    border: none;
+}

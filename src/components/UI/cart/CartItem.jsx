@@ -24,9 +24,9 @@ const CartItem = ({ item }) => {
         setOpenNotify(false);
     };
     //----------------------------------------------------------------
-    const { productId, number, name, image, price, discount } = item
-    const discountPrice = price - price * discount / 100
-    const [soLuong, setSoLuong] = useState(number);
+    const { productId, productName, productImage, price, amount, promotion} = item
+    const discountPrice = price - price * promotion / 100
+    const [soLuong, setSoLuong] = useState(amount);
 
     const dispatch = useDispatch()
 
@@ -41,25 +41,12 @@ const CartItem = ({ item }) => {
         //       price
         //   }))
 
-        // call API
-        var myHeaders = new Headers();
-        myHeaders.append("Content-Type", "application/json");
-
-        var raw = JSON.stringify({
-            "productId": productId,
-            "number": 1,
-            "price": discountPrice,
-        });
-
-
         var requestOptions = {
-            method: 'PUT',
-            headers: myHeaders,
-            body: raw,
+            method: 'POST',
             redirect: 'follow'
-        };
-
-        fetch(`http://localhost:3000/api/v1/cart/${cartId}`, requestOptions)
+          };
+          
+          fetch(`http://localhost:8080/api/v1/cart/product?cartId=${cartId}&productId=${productId}&amount=1`, requestOptions)
             .then(response => response.text())
             .then(result => console.log(result))
             .catch(error => console.log('error', error));
@@ -73,24 +60,12 @@ const CartItem = ({ item }) => {
         // dispatch(cartActions.removeItem(productId))
 
         // call API
-        var myHeaders = new Headers();
-        myHeaders.append("Content-Type", "application/json");
-
-        var raw = JSON.stringify({
-            "productId": productId,
-            "number": -1,
-            "price": discountPrice,
-        });
-
-
         var requestOptions = {
-            method: 'PUT',
-            headers: myHeaders,
-            body: raw,
+            method: 'POST',
             redirect: 'follow'
-        };
-
-        fetch(`http://localhost:3000/api/v1/cart/${cartId}`, requestOptions)
+          };
+          
+          fetch(`http://localhost:8080/api/v1/cart/product?cartId=${cartId}&productId=${productId}&amount=-1`, requestOptions)
             .then(response => response.text())
             .then(result => console.log(result))
             .catch(error => console.log('error', error));
@@ -127,7 +102,7 @@ const CartItem = ({ item }) => {
         //     .catch(error => console.log('error', error));
         //------
 
-        deleteCart(productId);
+        deleteCart(productId, cartId);
         setSoLuong(0)
         window.location.reload();
 
@@ -141,12 +116,12 @@ const CartItem = ({ item }) => {
                     soLuong > 0 ?
                         (
                             <div className="cart__item-info d-flex gap-2">
-                                <img src={image[0]} alt="product-img" />
+                                <img src={productImage} alt="product-img" />
                                 <div className="cart__product-info w-100 d-flex align-items-center
              gap-4 justify-content-between">
                                     <div>
 
-                                        <h6 className='cart__product-title'>{name}</h6>
+                                        <h6 className='cart__product-title'>{productName}</h6>
                                         <p className='d-flex align-items-center gap-5
                      cart__product-price'>{soLuong}x <span className='defaultPrice'>{price} VNĐ</span>
                                             <span>{discountPrice} VNĐ</span>

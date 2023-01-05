@@ -17,6 +17,9 @@ import '../styles/historyorderdetail.css'
 const HistoryOrder = () => {
 
     const {isLoading, data} = useQuery([thunkOrderTypes.GET_ALLORDER], getAllOrder)
+    
+    console.log("getOrderBYUser: ", data)
+
     const [dataFeedback, setDataFeedback] = useState(null);
     const [isShowFeedback, setIsShowFeedback] = useState(false);
 
@@ -26,17 +29,18 @@ const HistoryOrder = () => {
     useEffect(() => {
         if(data) {
             
-            setOrderData(data.data.results)
+            setOrderData(data.data)
+           
         }
     }, [data])
 
     const columns = [
-        { field: "orderCode", headerName: "Mã đơn hàng", width: 300 },
+        { field: "billId", headerName: "Mã đơn hàng", width: 300 },
         
         // { field: "total", headerName: "Số lượng sản phẩm", width: 300 },
-        { field: "date", headerName: "Ngày tạo", width: 300 },
+        { field: "payDate", headerName: "Ngày tạo", width: 300 },
         // { field: "total", headerName: "Tổng giá trị", width: 300 },
-        { field: "total", headerName: "Tổng giá trị", width: 300, renderCell: (params) => {
+        { field: "totalPrice", headerName: "Tổng giá trị", width: 300, renderCell: (params) => {
             if(params.row.total) {
                 return `${params.row.total} VNĐ`
             }
@@ -58,7 +62,7 @@ const HistoryOrder = () => {
                 return 'Đang giao hàng'
             }
         }},
-        { field: "deliveryDate", headerName: "Ngày giao hàng", width: 200 },
+        { field: "paymentMethod", headerName: "Ngày giao hàng", width: 200 },
     //     {
     //         field: "action",
     //         headerName: "Action",
@@ -83,6 +87,7 @@ const HistoryOrder = () => {
     const handleRowClick = (params) => {
         setIsShowFeedback(true);
         setDataFeedback(params.row);
+        
 
     }
 
@@ -114,7 +119,7 @@ const HistoryOrder = () => {
                 disableSelectionOnClick
                 // experimentalFeatures={{ newEditingApi: true }}
                 autoHeight
-                getRowId={(row) =>  row.uid}
+                getRowId={(row) =>  row.billId}
                 onRowClick={handleRowClick}
             />
             <HistoryOrderDetail

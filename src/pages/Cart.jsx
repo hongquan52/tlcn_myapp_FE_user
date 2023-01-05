@@ -12,16 +12,14 @@ import { cartActions } from '../store/shopping-cart/cartSlice'
 import '../styles/cart-page.css'
 import { useQuery } from '@tanstack/react-query'
 import { thunkCartTypes, thunkProductTypes } from '../constants/thunkTypes'
-import { getCart } from '../api/fetchers/cart'
+import { deleteCart, getCart, getProductInCart } from '../api/fetchers/cart'
 import { getAllProductsList } from '../api/fetchers/product'
-import { deleteCart } from '../api/fetchers/cart'
+
 import { useState, useEffect } from 'react'
 import { Dialog,DialogActions, DialogContent, DialogContentText, DialogTitle, Button} from '@mui/material';
 
-
-// const userInfo = sessionStorage.getItem('userInfo')
-// const cartId = userInfo.cartId;
-console.log(userInfo);
+const userInfo = localStorage.getItem('userInfo');
+const cartId = sessionStorage.getItem('cartId');
 
 const Cart = () => {
   //----NOTIFY delete-----------------------------------------
@@ -40,7 +38,8 @@ const Cart = () => {
       setOpenNotify(false);
   };
 
-  const { isLoading, data } = useQuery([thunkCartTypes.GET_CART], getCart)
+  const {isLoading, data} = useQuery([thunkCartTypes.GET_PRODUCT_IN_CART],
+    () => getProductInCart(cartId) );
 
   //const query = useQuery([thunkProductTypes.GETALL_PRODUCTLIST], getAllProductsList)
 
@@ -52,14 +51,14 @@ const Cart = () => {
 
   const totalBill = cartData.reduce((acc, item) => {
 
-    return acc + (item.price * (1 - item.discount / 100)) * item.number;
+    return acc + (item.price * (1 - item.promotion / 100)) * item.amount;
   }, 0)
   // const totalBill = 20000
 
   // console.log(data)
   useEffect(() => {
     if (data) {
-      setCartData(data.data.results.product)
+      setCartData(data.data)
 
       /*
       khi nào tạo thành công api login mới sử dụng
@@ -87,11 +86,11 @@ const Cart = () => {
   const Tr = (props) => {
     const navigate = useNavigate()
 
-    const { productId, number, name, image, price, discount } = props.item
+    const { productId, productName, productImage, price, promotion, amount } = props.item
     const cartId = props.cartId;
-    const discountPrice = (price * (1 - discount / 100)).toFixed(2)
+    const discountPrice = (price * (1 - promotion / 100)).toFixed(2)
 
-    const [soLuong, setSoLuong] = useState(number)
+    const [soLuong, setSoLuong] = useState(amount)
     const totalPrice = soLuong * discountPrice;
 
     const dispatch = useDispatch()
@@ -100,7 +99,7 @@ const Cart = () => {
       // dispatch(cartActions.deleteItem(productId))
       
       setSoLuong(0)
-      deleteCart(productId)
+      deleteCart(productId, cartId);
       window.location.reload();
     }
     const increaseItem = () => {
@@ -166,10 +165,10 @@ const Cart = () => {
             <>
               <td className='text-center cart__img-box'>
 
-                <img src={image[0]} alt="" />
+                <img src={productImage} alt="" />
 
               </td>
-              <td className='text-center'>{name}</td>
+              <td className='text-center'>{productName}</td>
               <td className='text-center'>{discountPrice} VNĐ</td>
               <td className='text-center'>
                 {/* <div className='d-flex align-items-center justify-content-between increase__decrease-btn'>
@@ -179,7 +178,7 @@ const Cart = () => {
             </div> */}
                 <div className='justify-content-center'>
                   
-                  <span className='quantity'>{soLuong}</span>
+                  <span className='quantity'>{amount}</span>
                   
 
                 </div>

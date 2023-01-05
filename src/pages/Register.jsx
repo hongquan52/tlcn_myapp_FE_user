@@ -21,36 +21,32 @@ const Register = () => {
   } = useForm();
 
   const onSubmit = async (dataForm) => {
+
     const messageErr = document.querySelector('.response');
-
-    // const { firstname, lastname, email, phone, username, password } = dataForm;
-    // const formData = new FormData();
-    // formData.set("firstname", firstname);
-    // formData.set("lastname", lastname);
-    // formData.set("email", email);
-    // formData.set("phone", phone);
-    // formData.set("username", username);
-    // formData.set("password", password);
-    
-    // formData.set("address", address);
-
-    const {
-      data: {success}
-    } = await createUser(dataForm);
-    if(success === true)
-    {
-      navigate("/login");
+    if(password !== passwordAgain) {
+      messageErr.innerText = "Mật khẩu đăng kí không trùng khớp"
+      alert(password.length);
     }
-    // if(success === true) {
-    //   messageErr.innerText = "Dang ki Thanh cong"
-    // }
-
-    // alert('Tien hanh dang ki...')
-    // navigate("/login");
+    else if(password.length < 6) {
+      messageErr.innerText = "Độ dài mật khẩu dưới 6 kí tự"
+    }
+    else {
+      const {
+        data: {success}
+      } = await createUser(dataForm);
+      if(success === true)
+      {
+        messageErr.innerText = "Dang ki Thanh cong"
+        navigate("/login");
+      }
+    }
   }
   const handleClick = () => {
     setOpen(!open);
   };
+
+  const passwordAgain = document.getElementById("passwordAgain")?.value
+  const password = document.getElementById("password")?.value
 
   return (
       <Helmet title='register'>
@@ -73,7 +69,8 @@ const Register = () => {
                   
                   </div>
                   <div className="form__group">
-                    <input 
+                    <input
+                      id='password' 
                       type='password'
                       placeholder='Password'
                       {...register("password", { required: true })}
@@ -81,27 +78,19 @@ const Register = () => {
                     />
                   </div>
                   <div className="form__group">
-                  <input 
-                    type='text'
-                    placeholder='firstname'
-                    {...register("firstname", { required: true })}
-
+                  <input
+                    id='passwordAgain' 
+                    type='password'
+                    placeholder='Password again'
+                    
                   />
 
                   </div>
+                  
                   <div className="form__group">
                   <input 
                     type='text'
-                    placeholder='lastname'
-                    {...register("lastname", { required: true })}
-
-                  />
-
-                  </div>
-                  <div className="form__group">
-                  <input 
-                    type='text'
-                    placeholder='email'
+                    placeholder='Email'
                     {...register("email", { required: true })}
 
                   />
@@ -111,20 +100,11 @@ const Register = () => {
 
                   <input 
                     type='text'
-                    placeholder='phone'
+                    placeholder='Phone'
                     {...register("phone", { required: true })}
 
                   />
                   </div>
-                  {/* <div className="form__group">
-                  <input 
-                    type='text'
-                    placeholder='address'
-                    {...register("address", { required: true })}
-
-                  />
-
-                  </div> */}
                   
                   {errors.username && (
                   <span className="message">Trường username là bắt buộc.</span>
@@ -146,7 +126,7 @@ const Register = () => {
                   <button 
                     onClick={handleClick}
                     className="addToCart__btn">
-                    {/* <Link to={`/home`}>Đăng nhập</Link> */}
+                    
                     Đăng kí
                     </button>
                 </form>

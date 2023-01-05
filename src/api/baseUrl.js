@@ -5,24 +5,21 @@ export const API = axios.create({
     baseURL: API_URL,
 });
 
-export const APII = axios.create({
-    baseURL: APII_URL,
-});
 
-const userInfo = JSON.parse(sessionStorage.getItem("userInfo")) || ""
-console.log(`CustomerId: ${userInfo.customer?.uid}`)
+// const userInfo = JSON.parse(sessionStorage.getItem("userInfo")) || ""
+// console.log(`CustomerId: ${userInfo.customer?.uid}`)
 
-API.interceptors.request.use(
-    (req) => {
-      if(userInfo) {
-        req.headers['customerId'] = userInfo.customer?.uid;
-      }
+// API.interceptors.request.use(
+//     (req) => {
+//       if(userInfo) {
+//         req.headers['customerId'] = userInfo.customer?.uid;
+//       }
       
       
-      return req;
-    },
-    (error) => {
-      Promise.reject(error);
-    }
-  );
+//       return req;
+//     },
+//     (error) => {
+//       Promise.reject(error);
+//     }
+//   );
 

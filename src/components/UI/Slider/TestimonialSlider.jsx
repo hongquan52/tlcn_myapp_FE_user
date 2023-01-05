@@ -1,7 +1,10 @@
 import React from 'react'
 //import Slider from 'slick-carousel'
 import Slider from 'react-slick'
-
+import { getAllFeedback } from '../../../api/fetchers/feedback';
+import { thunkFeedbackTypes } from '../../../constants/thunkTypes';
+import { useQuery } from '@tanstack/react-query';
+import { Rating } from '@mui/material';
 import ava01 from "../../../assets/images/ava-1.jpg";
 import ava02 from "../../../assets/images/ava-2.jpg";
 import ava03 from "../../../assets/images/ava-3.jpg";
@@ -9,7 +12,9 @@ import ava03 from "../../../assets/images/ava-3.jpg";
 import '../../../styles/slider.css'
 
 const TestimonialSlider = () => {
-  
+    const querygetAllFeedback = useQuery([thunkFeedbackTypes.GETALL_FEEDBACK], getAllFeedback)
+    console.log("get all feedback: ", querygetAllFeedback?.data?.data?.list)
+
     const settings = {
         dots: true,
         autoplay: true,
@@ -23,42 +28,28 @@ const TestimonialSlider = () => {
   
     return (
         <Slider {...settings}>
-            <div>
-                <p className="review__text">
-                    "Các sản phẩm ở đây thật tuyệt vời, giá tiền hợp với đại đa số gia đình của tôi. Nhất định tôi sẽ ghé lại cửa hàng vào lần tới"
-                </p>
-                <div className='slider__content d-flex align-items-center gap-3'>
-                    <img src={ava01} alt="avatar" className='rounded' />
-                    <h6>Cao Trí</h6>
-                </div>
-            </div>
-            <div>
-                <p className="review__text">
-                    "Các sản phẩm ở đây thật tuyệt vời, giá tiền hợp với đại đa số gia đình của tôi. Nhất định tôi sẽ ghé lại cửa hàng vào lần tới"
-                </p>
-                <div className='slider__content d-flex align-items-center gap-3'>
-                    <img src={ava02} alt="avatar" className='rounded' />
-                    <h6>Bích Long</h6>
-                </div>
-            </div>
-            <div>
-                <p className="review__text">
-                    "Các sản phẩm ở đây thật tuyệt vời, giá tiền hợp với đại đa số gia đình của tôi. Nhất định tôi sẽ ghé lại cửa hàng vào lần tới"
-                </p>
-                <div className='slider__content d-flex align-items-center gap-3'>
-                    <img src={ava03} alt="avatar" className='rounded' />
-                    <h6>Văn Thành</h6>
-                </div>
-            </div>
-            <div>
-                <p className="review__text">
-                    "Các sản phẩm ở đây thật tuyệt vời, giá tiền hợp với đại đa số gia đình của tôi. Nhất định tôi sẽ ghé lại cửa hàng vào lần tới"
-                </p>
-                <div className='slider__content d-flex align-items-center gap-3'>
-                    <img src={ava03} alt="avatar" className='rounded' />
-                    <h6>Hồng Quân</h6>
-                </div>
-            </div>
+            {
+                
+                querygetAllFeedback?.data?.data?.list.map((item, index) => (
+                    <div key={index}>
+                        <p className="review__text">
+                            {item.content}
+                        </p>
+                        <Rating
+                              name="simple-controlled"
+                              value={item.vote}
+                              
+                        />
+                        <h6 className=''>{item.userName}</h6>
+                        <div className='slider__content d-flex align-items-center gap-3 mt-4'>
+                            <img src={item.productThumbnail} alt="avatar" className='rounded' />
+                            <h6>{item.productName}</h6>
+                        </div>
+                    </div>
+                ))
+            }
+            
+            
         </Slider>
   )
 }

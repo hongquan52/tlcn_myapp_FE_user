@@ -15,9 +15,9 @@ export const getAllProducts = async () => {
     } catch (error) {}
 };
 
-export const getAllProductsList = async () => {
+export const getHotProducts = async () => {
   try {
-    const response = await API.get(`api/v1/product`);
+    const response = await API.get(`/api/v1/statistic/bill/product/sales`);
     
     return response;
   } catch (error) {}

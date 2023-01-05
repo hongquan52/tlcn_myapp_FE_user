@@ -12,52 +12,49 @@ const cartId = sessionStorage.getItem("cartId")
 
 const ProductCard = (props) => {
     const navigate = useNavigate()
-    const {uid, name, image, price, discount, discountPrice} = props.item
+    const {id, name, image, promotion, price} = props.item
     const dispatch = useDispatch()
     //console.log(props.item)
 
     // const addToCart = () => {
     //     dispatch(cartActions.addItem({
-    //         uid,
+    //         id,
     //         name,
     //         image: image[0],
     //         price
     //     }))
     // }
+    const handleClickProductName = () => {
+        window.location.reload();
+    }
     const addToCart = () => {
         // call API
-      var myHeaders = new Headers();
-      myHeaders.append("Content-Type", "application/json");
-
-      var raw = JSON.stringify({
-          "productId": uid,
-          "number": 1,
-          "price": discountPrice,
-      });
-
-
-      var requestOptions = {
-          method: 'PUT',
-          headers: myHeaders,
-          body: raw,
-          redirect: 'follow'
-      };
-
-      fetch(`http://localhost:3000/api/v1/cart/${cartId}`, requestOptions)
-          .then(response => response.text())
-          .then(result => console.log(result))
-          .catch(error => console.log('error', error));
+        var requestOptions = {
+            method: 'POST',
+            redirect: 'follow'
+          };
+          
+          fetch(`http://localhost:8080/api/v1/cart/product?cartId=${cartId}&productId=${id}&amount=1`, requestOptions)
+            .then(response => response.text())
+            .then(result => console.log(result))
+            .catch(error => console.log('error', error));
       //------
+      window.location.reload();
       
     }
     return (
     <div className='product__item'>
         <div className="product__img">
-            <img src={image[0]} alt="product-img" className='w-50'/>
+            {
+                image ?
+                (<img src={image} alt="product-img" className='w-50'/>):
+                (<img src={"https://www.pngitem.com/pimgs/m/45-455622_transparent-computer-png-gaming-pc-transparent-png-png.png"} alt="product-img" className='w-50'/>)
+            }
+            
         </div>
 
         <div className="product__content">
-            <h5><Link to={`/foods/${uid}`}>{name}</Link></h5>
+            <h5 onClick={handleClickProductName}><Link to={`/foods/${id}`}>{name}</Link></h5>
             <div className='d-flex align-items-center
              justify-content-between'>
                 {/* <span className="product__price">
@@ -65,22 +62,27 @@ const ProductCard = (props) => {
                 </span> */}
                 {' '}
                 <span className="product__discountPrice">
-                    {discountPrice} VNĐ
+                    {price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} VNĐ
                 </span>
-                <p className='product__discount'>-{discount}%</p>
+                <p className='product__discount'>-{promotion}%</p>
                 {
-                    userInfo ? (
-                        <span onClick={props.sukien}>
-                            <button className='addToCart__btn addToCart__btn1'
-                                onClick={addToCart}>Mua</button>
-                        </span>
-                    ):
-                    (
-                        <span>
-                            <button className='addToCart__btn addToCart__btn1'
-                                onClick={() => navigate('/login')}>Mua</button>
-                        </span>
-                    )
+                    // userInfo ? (
+                    //     <span onClick={props.sukien}>
+                    //         <button className='addToCart__btn addToCart__btn1'
+                    //             onClick={addToCart}>Mua</button>
+                    //     </span>
+                    // ):
+                    // (
+                    //     <span>
+                    //         <button className='addToCart__btn addToCart__btn1'
+                    //             onClick={() => navigate('/login')}>Mua</button>
+                    //     </span>
+                    // )
+
+                    <span onClick={props.sukien}>
+                             <button className='addToCart__btn addToCart__btn1'
+                               onClick={addToCart}>Mua</button>
+                    </span>
                 }
                 
             </div>

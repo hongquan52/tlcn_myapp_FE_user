@@ -1,4 +1,5 @@
-import React, {useRef} from 'react'
+import React, { useRef } from 'react'
+import { Link } from 'react-router-dom'
 import CommonSection from '../components/UI/common-section/CommonSection'
 import Helmet from '../components/Helmet/Helmet'
 import { useForm } from 'react-hook-form'
@@ -8,7 +9,7 @@ import '../styles/contact-page.css'
 import { useParams } from 'react-router-dom'
 import '../styles/userinformation.css'
 // import '../styles/user.css'
-import { Box, CircularProgress } from '@mui/material'
+import { Box, CircularProgress, FormControl, FormLabel } from '@mui/material'
 
 import Radio from '@mui/material/Radio';
 import RadioGroup from '@mui/material/RadioGroup';
@@ -18,9 +19,20 @@ import { updateUSer, getUSer } from '../api/fetchers/user'
 import { useEffect, useState } from 'react'
 // import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { thunkUserTypes } from '../constants/thunkTypes'
-const userInfo = sessionStorage.getItem('userInfo')
+import { thunkAddressTypes, thunkUserTypes } from '../constants/thunkTypes'
+import { deleteAddressDetail, getAddressByUser } from '../api/fetchers/address'
+
+
 const UserInformation = () => {
+    const queryGetUser = useQuery([thunkUserTypes.GET_USER], () => getUSer(userId))
+    const queryAddressByUser = useQuery([thunkAddressTypes.GET_ADDRESS_BY_USER], () => getAddressByUser(userId))
+
+
+    const [addressUser, setAddressUser] = useState([])
+    const [informationUser, setInformationUser] = useState([])
+
+    const addressId = document.getElementById("addressId")?.value
+
     const upLoadRef = useRef();
 
     const [enterFirstName, setEnterFirstName] = useState()
@@ -37,17 +49,12 @@ const UserInformation = () => {
 
     const { userId } = useParams()
     // const [userData, setUserData] = useState([])
-    const { isLoading, data } = useQuery([thunkUserTypes.GET_USER],
-        () => getUSer(userId))
+
 
     const handleChange = ((e) => {
         setValueGender(e.target.value)
-    
-      })
-    // console.log(data)
-    // console.log(typeof data.data.results.dateOfBirth)
-    
-    
+
+    })
 
     // create form by useForm()
     const {
@@ -58,17 +65,17 @@ const UserInformation = () => {
     } = useForm()
 
     const onSubmit = async (dataForm) => {
-        const { firstname, lastname, email, phone,gender, address, username, password } = dataForm;
-        let formData = new FormData()
-        formData.append("firstname", firstname);
-        formData.append("lastname", lastname);
-        formData.append("email", email);
-        formData.append("phone", phone);
-        formData.append("gender", gender);
-        formData.append("address", address);
-        formData.append("username", username);
-        formData.append("password", password);
-        
+        const { name, phone, email, enable } = dataForm;
+
+        // let formData = new FormData()
+        // formData.append("firstname", firstname);
+        // formData.append("lastname", lastname);
+        // formData.append("email", email);
+        // formData.append("phone", phone);
+        // formData.append("gender", gender);
+        // formData.append("address", address);
+        // formData.append("username", username);
+        // formData.append("password", password);
 
         // const {
         //     data: { status, message },
@@ -77,43 +84,67 @@ const UserInformation = () => {
         //     alert(message);
         // }
         // console.log(upLoadRef.current.file[0])
-        
+
+        // fetch API:
+        var formdata = new FormData();
+        formdata.append("name", name);
+        formdata.append("email", email);
+        formdata.append("phone", phone);
+        formdata.append("password", "1234567890"); //informationUser.password : bổ sung dưới responseDTO User trường password
+        formdata.append("enable", enable);
+        formdata.append("role", "3");
+        sessionStorage.setItem("userName", name)
+        var requestOptions = {
+            method: 'PUT',
+            body: formdata,
+            redirect: 'follow'
+        };
+
+        fetch(`http://localhost:8080/api/v1/user/${userId}`, requestOptions)
+            .then(response => response.text())
+            .then(result => console.log(result))
+            .catch(error => console.log('error', error));
+
+        window.location.reload();
     }
 
     useEffect(() => {
-        if (data) {
-            setValue("firstname", data.data.results.firstName);
-            setValue("lastname", data.data.results.lastName);
-            setValue("email", data.data.results.email);
-            setValue("phone", data.data.results.phone);
-            setValue("address", data.data.results.email);
-            setValue("dateofbirth", data.data.results.dateOfBirth)
-            setValue("username", data.data.results.username);
-            setValue("password", data.data.results.password);
+        if (informationUser) {
+            setValue("name", informationUser.name);
+            setValue("phone", informationUser.phone);
+            setValue("email", informationUser.email);
+            setValue("role", informationUser?.role?.description);
+            setValue("enable", informationUser.enable);
 
-            setValueGender(data.data.results?.sex)
+            // setValueGender(data.data.results?.name)
 
         }
-    }, [data,setValue]);
+    }, [informationUser, setValue]);
+    useEffect(() => {
+        if (queryAddressByUser.data && queryGetUser.data) {
+            setAddressUser(queryAddressByUser.data.data);
+            setInformationUser(queryGetUser.data.data);
+        }
+    }, [queryAddressByUser.data, queryGetUser.data])
 
     // upload images function
     const uploadImage = (file) => {
         const { type } = file;
         if (
-        type === "image/png" ||
-        type === "image/svg" ||
-        type === "image/jpg" ||
-        type === "image/jpeg"
+            type === "image/png" ||
+            type === "image/svg" ||
+            type === "image/jpg" ||
+            type === "image/jpeg"
         ) {
-        let reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = function () {
-            setImageUrl(reader.result);
-        };
-        setWrongImageType(false);
+            let reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = function () {
+                setImageUrl(reader.result);
+            };
+            setWrongImageType(false);
         } else {
-        setWrongImageType(true);
-        setImageUrl(null);
+            setWrongImageType(true);
+            setImageUrl(null);
         }
     };
     //--------------------------------------
@@ -122,28 +153,28 @@ const UserInformation = () => {
         myHeaders.append("Content-Type", "application/json");
 
         var raw = JSON.stringify({
-        
-        "firstName": enterFirstName,
-        "lastName": enterLastName,
-        "sex": valueGender,
-        "phone": enterPhone,
-        "email": enterEmail,
-        "avatar": imageUrl,
+
+            "firstName": enterFirstName,
+            "lastName": enterLastName,
+            "sex": valueGender,
+            "phone": enterPhone,
+            "email": enterEmail,
+            "avatar": imageUrl,
         });
 
         var requestOptions = {
-        method: 'PUT',
-        headers: myHeaders,
-        body: raw,
-        redirect: 'follow'
+            method: 'PUT',
+            headers: myHeaders,
+            body: raw,
+            redirect: 'follow'
         };
 
-        fetch(`localhost:3000/api/v1/customer/${userInfo.uid}`, requestOptions)
-        .then(response => response.text())
-        .then(result => console.log(result))
-        .catch(error => console.log('error', error));
+        fetch(`localhost:3000/api/v1/customer/${userId}`, requestOptions)
+            .then(response => response.text())
+            .then(result => console.log(result))
+            .catch(error => console.log('error', error));
     }
-    if (isLoading) {
+    if (queryAddressByUser.isLoading && queryGetUser.isLoading) {
         return (
             <div style={{
                 display: "flex",
@@ -169,13 +200,13 @@ const UserInformation = () => {
             >
                 <h6 className={`${tab === 'information' ? 'tab__active' : ''}`} onClick={() => setTab('information')}>Information</h6>
                 <h6 className={`${tab === 'changPassword' ? 'tab__active' : ''}`}
-                    onClick={() => setTab('changPassword')}>Change Password</h6>
+                    onClick={() => setTab('changPassword')}>Address</h6>
             </div>
 
             {
                 tab === 'information' ? (
                     <>
-                        {data.data.results?.avatar ? (
+                        {/* {data.data.results?.avatar ? (
                             <img src={data.data.results?.avatar} alt={"avatar"} className="userShowImg" />
                         ) : (
                             <img
@@ -184,7 +215,7 @@ const UserInformation = () => {
                                 className="userShowImg"
                             />
                         )
-                        }
+                        } */}
 
                         <form
                             className='form userUpdateForm'
@@ -196,26 +227,17 @@ const UserInformation = () => {
                         >
                             <div className="userUpdateLeft">
                                 <div className="form__group">
-                                    <label>First Name</label>
+                                    <label>Tên người dùng</label>
                                     <input
                                         onChange={(e) => setEnterFirstName(e.target.value)}
                                         type='text'
-                                        placeholder='Full name'
+                                        placeholder='Tên người dùng'
                                         className=''
-                                        {...register('firstname', { required: true })}
+                                        {...register('name', { required: true })}
                                     />
                                 </div>
-                                <div className="form__group">
-                                    <label>Last Name</label>
-                                    <input
-                                        onChange={(e) => setEnterLastName(e.target.value)}
-                                        type='text'
-                                        placeholder='Last name'
-                                        className=''
-                                        {...register('lastname', { required: true })}
-                                    />
-                                </div>
-                                <div className="form__group">
+
+                                {/* <div className="form__group">
                                     <label>Giới tính</label>
                                     <RadioGroup
                                         aria-labelledby="demo-controlled-radio-buttons-group"
@@ -232,17 +254,8 @@ const UserInformation = () => {
                                             <FormControlLabel value="female" control={<Radio />} label="Female" />
                                         </div>
                                     </RadioGroup>
-                                </div>
-                                <div className="form__group">
-                                    <label>Ngày sinh</label>
-                                    <input 
-                                        type='text'
-                                        placeholder='Ngay sinh'
-                                        className=''
-                                        {...register('dateofbirth', { required: true })}
-                                        
-                                    />
-                                </div>
+                                </div> */}
+
                                 <div className="form__group">
                                     <label>Email</label>
                                     <input
@@ -251,6 +264,7 @@ const UserInformation = () => {
                                         placeholder='Email'
                                         className=''
                                         {...register('email', { required: true })}
+                                        disabled
                                     />
                                 </div>
                                 <div className="form__group">
@@ -264,13 +278,25 @@ const UserInformation = () => {
                                     />
                                 </div>
                                 <div className="form__group">
-                                    <label>Địa chỉ</label>
+                                    <label>Vai trò</label>
                                     <input
                                         type='text'
-                                        placeholder='Address'
+                                        placeholder='Vai trò'
                                         className=''
-                                        {...register('address', { required: true })}
+                                        {...register('role', { required: true })}
+                                        disabled
                                     />
+                                </div>
+                                <div className="form__group">
+                                    
+                                    <select className='defaultAddress_select'
+                                        {...register("enable")}
+                                        disabled
+                                        
+                                    >
+                                        <option value={true}>Hoạt động</option>
+                                        <option value={false}>Không hoạt động</option>
+                                    </select>
                                 </div>
 
                             </div>
@@ -316,52 +342,133 @@ const UserInformation = () => {
                             </div> */}
                             <div className="userFormRight">
                                 <button className="addToCart__btn"
-                                        onClick={handleSubmit(onSubmit)}>
-                                        Lưu
-                                        
+                                    onClick={handleSubmit(onSubmit)}>
+                                    Lưu thông tin
+
                                 </button>
                             </div>
-                            
+
                         </form>
                     </>
                 )
                     :
-                    // (
-                    //     <form className='form mb-5' onSubmit={handleSubmit(onSubmit)}>
-                    //         <div className="form__group">
-                    //             <label>Tên tài khoản</label>
-                    //             <input
-                    //                 type='text'
-                    //                 placeholder='Username'
-                    //                 className=''
-                    //                 {...register('username', { required: true })}
-                    //             />
-                    //         </div>
-                    //         <div className="form__group">
-                    //             <label>Mật khẩu</label>
-                    //             <input
-                    //                 type='password'
-                    //                 placeholder=''
-                    //                 className=''
-                    //                 {...register('password', { required: true })}
-                    //             />
-                    //         </div>
-                    //         <div className="form__group">
-                    //             <label>Mật khẩu mới</label>
-                    //             <input
-                    //                 type='password'
-                    //                 placeholder='password'
-                    //                 className=''
-                    //                 {...register('password', { required: true })}
-                    //             />
-                    //         </div>
+                    (
+                        addressUser?.map((item) => {
 
-                    //         <button className="addToCart__btn">
-                    //             Lưu mật khẩu
-                    //         </button>
-                    //     </form>
-                    // )
-                    null
+                            const handleSaveAddress = () => {
+                                // var formdata = new FormData();
+                                // formdata.append("province", province);
+                                // formdata.append("district", district);
+                                // formdata.append("ward", ward);
+                                // formdata.append("apartmentNumber", apartmentNumber);
+                                // formdata.append("defaultAddress", defaultAddress);
+
+                                // var requestOptions = {
+                                // method: 'PUT',
+                                // body: formdata,
+                                // redirect: 'follow'
+                                // };
+
+                                // fetch(`http://localhost:8080/api/v1/address/user?userId=${2}&addressId=${addressId}`, requestOptions)
+                                // .then(response => response.text())
+                                // .then(result => console.log(result))
+                                // .catch(error => console.log('error', error));
+
+                                // window.location.reload();
+
+                                sessionStorage.setItem("addressIDDDDD", addressId);
+                            }
+
+                            return (
+                                <form className='form mb-5' key={item.address.id}>
+                                    <div className="form__group">
+                                        <label>Mã địa chỉ</label>
+                                        <input
+                                            id='addressId'
+                                            type='text'
+                                            placeholder='Mã địa chỉ'
+                                            className=''
+                                            value={item.address.id}
+
+                                        />
+                                    </div>
+                                    <div className="form__group">
+                                        <label>Số nhà</label>
+                                        <input
+                                            id='apartmentNumber'
+                                            type='text'
+                                            placeholder='Số nhà'
+                                            className=''
+                                            value={item.address.apartmentNumber}
+
+                                        />
+                                    </div>
+                                    <div className="form__group">
+                                        <label>Phường / Xã</label>
+                                        <input
+                                            id='ward'
+                                            type='text'
+                                            placeholder='Tên phường / xã'
+                                            className=''
+                                            value={item.address.ward}
+
+                                        />
+                                    </div>
+                                    <div className="form__group">
+                                        <label>Quận / Huyện</label>
+                                        <input
+                                            id='district'
+                                            type='text'
+                                            placeholder='Quận / Huyện'
+                                            className=''
+                                            value={item.address.district}
+
+                                        />
+                                    </div>
+                                    <div className="form__group">
+                                        <label>Tỉnh / Thành phố</label>
+                                        <input
+                                            id='province'
+                                            type='text'
+                                            placeholder='Tỉnh / Thành phố'
+                                            className=''
+                                            value={item.address.province}
+
+                                        />
+                                    </div>
+
+                                    <div className='d-flex justify-content-between'>
+
+                                        <div>
+                                            <h6>Default Address</h6>
+                                            <select className='defaultAddress_select' id="defaultAddress"
+                                                defaultValue={item.defaultAddress}
+                                                disabled
+                                            >
+                                                <option value={true}>True</option>
+                                                <option value={false}>False</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <button className="addToCart__btn" onClick={handleSaveAddress}>
+                                                <i class="ri-pencil-line"></i>
+                                            </button>
+                                            <button className="addToCart__btn" onClick={() => deleteAddressDetail(userId, item.address.id)}>
+                                                <i class="ri-delete-bin-line"></i>
+                                            </button>
+                                            <Link to={'/address/create'}><button className="addToCart__btn" >
+                                                <i class="ri-file-add-fill"></i>
+
+                                            </button></Link>
+                                        </div>
+                                    </div>
+
+                                </form>
+                            )
+                        }
+                        )
+                    )
+
             }
 
         </Helmet>
@@ -369,3 +476,28 @@ const UserInformation = () => {
 }
 
 export default UserInformation
+
+const addressByUser = [
+    {
+        "user": 2,
+        "address": {
+            "id": 8,
+            "apartmentNumber": "35 Bùi Quang Là",
+            "ward": "Phường 12",
+            "district": "Gò Vấp",
+            "province": "TPHCM"
+        },
+        "defaultAddress": false
+    },
+    {
+        "user": 2,
+        "address": {
+            "id": 10,
+            "apartmentNumber": "391/42 Sư Vạn Hạnh",
+            "ward": "Phường 12",
+            "district": "Quận 10",
+            "province": "TPHCM"
+        },
+        "defaultAddress": true
+    }
+]

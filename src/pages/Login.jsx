@@ -6,12 +6,16 @@ import { Link, useNavigate } from 'react-router-dom'
 import {useForm} from 'react-hook-form'
 import { login } from '../api/fetchers/user'
 import '../styles/login.css'
-
+import jwtDecode from 'jwt-decode'
 import {Button, Dialog, Alert, AlertTitle} from '@mui/material'
+import { useQuery } from '@tanstack/react-query'
+import { thunkCartTypes } from '../constants/thunkTypes'
+import { getCart } from '../api/fetchers/cart'
 
 
 const Login = () => {
   const [open, setOpen] = useState(false);
+  const [data, setData] = useState([])
 
   const navigate = useNavigate()
   const {
@@ -24,21 +28,67 @@ const Login = () => {
   const onSubmit = async (dataForm) => {
     const messageErr = document.querySelector('.response');
     const info = document.querySelector('.info');
-    const {
-      data: { code, message, results, success },
-    } = await login(dataForm);
-    if (success === true) {
-      messageErr.innerText = "Thanh cong"
-      // localStorage.setItem("userInfo", JSON.stringify(results));
-      sessionStorage.setItem("userInfo", JSON.stringify(results));
+    const {email, password} = dataForm;
+
+    // const {
+    //   data: { status, message, data },
+    // } 
+    //  = await login(dataForm);
+    // console.log("Login response: ", status, message, data);
+    // if (status ="OK") {
+    //   messageErr.innerText = message;
+      
+    //   // sessionStorage.setItem("userInfo", JSON.stringify(results));
       
       
-      navigate("/home");
+    //   // navigate("/home");
+    //   // window.location.reload();
+    // }
+
+    var formdata = new FormData();
+    formdata.append("email", email);
+    formdata.append("password", password);
+
+    var requestOptions = {
+      method: 'POST',
+      body: formdata,
+      redirect: 'follow'
+    };
+
+    fetch("http://localhost:8080/auth/login", requestOptions)
+      .then(response => response.text())
+      .then(result => 
+        {
+          
+          setData(JSON.parse(result));
+        })
+      .catch(error => console.log('error', error));
+    
+    console.log("Data login 1111111: ", data);
+    
+    sessionStorage.setItem("userName", data.data.name)
+    decoded(data.data.accessToken);
+    
+    if(data.data) {
+      // let userID = sessionStorage.getItem("userID")
+      // getCartByUserID(userID);
+      navigate("/home")
       window.location.reload();
     }
-    
+    else {
+      messageErr.innerText = "Đăng nhập thất bại";
+    }
+      
   };
-
+  
+  const decoded = (token) => {
+    const decoded = jwtDecode(token);
+    const manguoidung = decoded.sub
+    const manguoidung1 = parseInt(manguoidung);
+    console.log("Mã khách hàng: ", manguoidung1);
+    sessionStorage.setItem("userID", manguoidung1);
+  }
+  
   const handleClick = () => {
     setOpen(!open);
   };
@@ -56,7 +106,7 @@ const Login = () => {
                 <input 
                   type="text"
                   placeholder="Username"
-                  {...register("username", { required: true })}
+                  {...register("email", { required: true })}
                 />
                 
                 </div>

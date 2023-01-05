@@ -14,6 +14,8 @@ import UserInformation from '../pages/UserInformation'
 import Success from '../pages/Success'
 import HistoryOrder from '../pages/HistoryOrder'
 import SuccessOrder from '../pages/SuccessOrder'
+import Delivery from '../pages/Delivery'
+import Address from '../pages/Address'
 const Routers = () => {
   return (
     <Routes>
@@ -32,6 +34,9 @@ const Routers = () => {
       <Route path='/success' element={<Success />} />
       <Route path='/successOrder' element={<SuccessOrder />} />
       <Route path='/historyOrder' element={<HistoryOrder />} />
+      <Route path='/delivery/:billId' element={<Delivery />} />
+      <Route path='/address/create' element={<Address />} />
+      
 
     </Routes>
 

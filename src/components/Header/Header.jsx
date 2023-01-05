@@ -13,8 +13,11 @@ import { getCart } from '../../api/fetchers/cart'
 
 import {Button, Dialog, Alert, AlertTitle} from '@mui/material'
 
-const userInfo = JSON.parse(sessionStorage.getItem("userInfo")) 
+const userInfo = localStorage.getItem("userInfo")
+// const userInfo = JSON.parse(localStorage.getItem("userInfo")) 
 
+const userID = sessionStorage.getItem("userID")
+const userName = sessionStorage.getItem("userName")
 
 const nav__links = [
   {
@@ -25,23 +28,13 @@ const nav__links = [
     display: "Tất cả sản phẩm",
     path: "/foods",
   },
-  // {
-  //   display: "Giỏ hàng",
-  //   path: "/cart",
-  // },
-  // {
-  //   display: "",
-  //   path: "/contact",
-  // },
-  // {
-  //   display: "Admin",
-  //   path: '/admin'
-  // },
-  userInfo ? {
+  
+  {
     display: "Thông tin người dùng",
-    path: `/userinformation/${userInfo.customer?.uid}`
+    path: `/userinformation/${userID}`
     
-  } : null
+  } 
+  // : null
   ,
   {
     display: "Lịch sử mua hàng",
@@ -51,9 +44,9 @@ const nav__links = [
 ]
 
 const Header = () => {
-  const {data} = useQuery([thunkCartTypes.GET_CART], getCart)
+  const {isLoading, data} = useQuery([thunkCartTypes.GET_CART], () => getCart(userID) )
   
-  console.log('data cart: ', data?.data?.results?.product)
+  
   const [quantity, setQuantity] = useState(0)
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
@@ -70,13 +63,16 @@ const Header = () => {
   
   useEffect(() => {
     if(data) {
-      setQuantity(data.data.results.product.length)
+      setQuantity(data?.data?.amount)
+      sessionStorage.setItem("cartId", data?.data?.cartId);
     }
   }, [data])
 
   const logout = () => {
-    sessionStorage.removeItem("userInfo")
+    sessionStorage.removeItem("userID")
     sessionStorage.removeItem("cartId")
+    sessionStorage.removeItem("userName")
+
 
     handleClick()
     navigate('/login')
@@ -124,7 +120,7 @@ const Header = () => {
           {
             userInfo ? (
               <>
-                <p>Hello {userInfo.customer?.username}</p>
+                <p>Hello {userName}</p>
                 {/* <button className='logout__btn' onClick={logout}>Log out</button> */}
                 {/* <span onClick={logout}><LogoutIcon/></span> */}
                 
@@ -149,13 +145,13 @@ const Header = () => {
               <i class="ri-shopping-cart-fill"></i>
               {/* <span className="cart__badge">{totalQuantity}</span>
               <span className="cart__badge">{quantity}</span> */}
-              <span className="cart__badge">{soLuongSanPhamTrongGioHang}</span>
+              <span className="cart__badge">{quantity}</span>
               
             </span>
 
             <span className="user">
               {
-                userInfo ? (
+                userID ? (
                     <span onClick={logout}>
                       <Link to={'/login'}>
                     <i class="ri-logout-box-r-line"></i>

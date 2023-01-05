@@ -8,7 +8,7 @@ export const getAllUSers = async () => {
 };
 export const getUSer = async (userId) => {
   try {
-    const response = await API.get(`/api/v1/customer/${userId}`);
+    const response = await API.get(`/api/v1/user/${userId}`);
     return response;
   } catch (error) {
     console.log(error.message);
@@ -37,10 +37,10 @@ export const updateUSer = async (userId, updateUser) => {
 
 export const login = async (formData) => {
   try {
-    const response = await API.post("/api/v1/customer/login", formData);
+    const response = await API.post("/auth/login", formData);
     return response;
   } catch (error) {
-    console.log(error);
+    console.log("Login error: ",error);
   }
 };
 
